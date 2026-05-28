@@ -665,7 +665,17 @@ textarea { resize:vertical; min-height:52px; }
       <div class="fi"><label id="lTk">Ticker</label><input id="iTk" placeholder="BTC, PTT…"/></div>
       <div class="fi"><label>Name</label><input id="iName" placeholder="Bitcoin…"/></div>
       <div class="fi"><label id="lQt">Quantity</label><input id="iQt" type="number" step="any" placeholder="0.00"/></div>
-      <div class="fi"><label id="lPr">Buy Price (THB)</label><input id="iPr" type="number" step="any" placeholder="0.00"/></div>
+      <div class="fi">
+        <label id="lPr">Buy Price</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="iPr" type="number" step="any" placeholder="0.00" style="flex:1"/>
+          <div style="display:flex;background:var(--black3);border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0">
+            <button type="button" id="prTHB" onclick="setPriceCur('THB')" style="padding:5px 8px;font-size:10px;font-family:var(--f);border:none;background:var(--black4);color:var(--white);cursor:pointer;font-weight:600">THB</button>
+            <button type="button" id="prUSD" onclick="setPriceCur('USD')" style="padding:5px 8px;font-size:10px;font-family:var(--f);border:none;background:none;color:var(--white3);cursor:pointer;font-weight:600">USD</button>
+          </div>
+        </div>
+        <div id="prConvHint" style="font-size:10px;color:var(--white3);margin-top:3px;display:none"></div>
+      </div>
       <div class="fi"><label>Date</label><input id="iDt" type="date"/></div>
       <div class="fi"><label>Broker / Wallet</label><input id="iBr" placeholder="Bitkub, Dime…"/></div>
       <div class="fi full"><label>Fee / Tax (THB)</label><input id="iFe" type="number" step="any" placeholder="0.00"/></div>
@@ -1350,6 +1360,24 @@ function fillPortSel(selId, curId){
     :'<option value="">— Create a portfolio first —</option>';
 }
 
+let priceCur = 'THB';
+function setPriceCur(c){
+  priceCur = c;
+  document.getElementById('prTHB').style.background = c==='THB'?'var(--black4)':'none';
+  document.getElementById('prTHB').style.color = c==='THB'?'var(--white)':'var(--white3)';
+  document.getElementById('prUSD').style.background = c==='USD'?'var(--black4)':'none';
+  document.getElementById('prUSD').style.color = c==='USD'?'var(--white)':'var(--white3)';
+  updatePrConvHint();
+}
+function updatePrConvHint(){
+  const v = parseFloat(document.getElementById('iPr').value);
+  const hint = document.getElementById('prConvHint');
+  if(priceCur==='USD' && v > 0){
+    hint.style.display='block';
+    hint.textContent = `≈ ฿${Math.round(v * liveUSDTHB).toLocaleString('th')} (rate ${liveUSDTHB.toFixed(2)})`;
+  } else { hint.style.display='none'; }
+}
+
 function onTypeChg(){
   const t=document.getElementById('aType').value;
   const isG=t==='gold';
@@ -1372,6 +1400,8 @@ function pickExist(id){
 // Add
 function openAdd(){
   editingId=null;
+  priceCur='THB';
+  setPriceCur('THB');
   document.getElementById('modAddTitle').textContent='Add Transaction';
   document.getElementById('addBtn').textContent='Save Transaction';
   ['iTk','iName','iBr','iNo'].forEach(i=>document.getElementById(i).value='');
@@ -1396,7 +1426,8 @@ function prevUp(e){
 function submitAsset(){
   const tk=document.getElementById('iTk').value.toUpperCase().trim();
   const qt=parseFloat(document.getElementById('iQt').value);
-  const pr=parseFloat(document.getElementById('iPr').value);
+  const rawPr=parseFloat(document.getElementById('iPr').value);
+  const pr = priceCur==='USD' ? rawPr * liveUSDTHB : rawPr;
   const portId=document.getElementById('aPort').value;
   if(!tk||!qt||!pr){alert('กรุณากรอก Ticker, จำนวน และราคา');return;}
   if(!portId){alert('กรุณาสร้าง Portfolio ก่อน');return;}
@@ -1570,6 +1601,7 @@ function resetData(){
 //  INIT
 // ═══════════════════════════════════
 window.onload=()=>{
+  document.getElementById('iPr').addEventListener('input', updatePrConvHint);
   renderAll();
   fetchPrices();
   setInterval(fetchPrices, 5*60*1000);
