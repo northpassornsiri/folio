@@ -295,8 +295,9 @@ body {
   z-index: 100; transform: translateX(100%);
   transition: transform .28s cubic-bezier(.4,0,.2,1);
   overflow-y: auto; display:flex; flex-direction:column;
+  pointer-events: none;
 }
-.dp.open { transform: translateX(0); }
+.dp.open { transform: translateX(0); pointer-events: auto; }
 .dp-head {
   padding: 20px; border-bottom: 1px solid var(--border);
   display:flex; align-items:center; gap:12px; flex-shrink:0;
@@ -1133,7 +1134,6 @@ function renderCatB(cats,total){
     </div>`).join('');
 }
 
-let _line=null;
 function initLine(hs){
   const ctx=document.getElementById('lineChart').getContext('2d');
   if(_line){_line.destroy();_line=null;}
